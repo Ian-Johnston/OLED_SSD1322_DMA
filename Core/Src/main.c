@@ -14,8 +14,13 @@
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
+  * VS2022 / VisualGDB:
+  * To upload HEX from VS2022 = BUILD then PROGRAM AND START WITHOUT DEBUGGING
+  *
+  *
   */
 /* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dma.h"
@@ -48,17 +53,22 @@
 
 /* USER CODE BEGIN PV */
 //******************************************************************************
+
 // SPI receive buffer for packets data
 volatile uint8_t rx_buffer[PACKET_WIDTH*PACKET_COUNT];
+
 // Array with character bitmaps
 uint8_t chars[CHAR_COUNT][CHAR_HEIGHT];
+
 // Array with annunciators flags (boolean)
 uint8_t flags[CHAR_COUNT];
+
 // When scanning the display, the order of the characters output is not sequential,
 // due to optimization of the VFD PCB layout. The Reorder[] array is used as a lookup
 // table to determine the correct position of characters.
-const uint8_t Reorder[PACKET_COUNT] = {	8,7,6,5,4,3,2,1,0,18,19,20,21,22,23,24,25,26,
-					                    27,28,29,30,31,32,33,34,35,17,16,15,14,13,12,11,10,9,46,45,44,43,42,41,40,39,38,37,36};
+const uint8_t Reorder[PACKET_COUNT] = {	8,7,6,5,4,3,2,1,0,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,17,16,15,14,13,12,11,10,9,46,45,44,43,42,41,40,39,38,37,36};
+// IJ TEST const uint8_t Reorder[PACKET_COUNT] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 29, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46 };
+
 // Used for line-by-line recoding and scaling of the characters of the main display line.
 // All 32 possible variants of a 5-pixel wide character bitmap string are converted into
 // the corresponding 10 OLED display pixels with 16 color gradations and packed into 5 bytes.
@@ -70,15 +80,18 @@ const uint8_t Upscale1[32][5] = {{0x00,0x00,0x00,0x00,0},{0x00,0x00,0x00,0x00,0x
                                  {0xFF,0x00,0xFF,0x00,0},{0xFF,0x00,0xFF,0x00,0xFF},{0xFF,0x00,0xFF,0xFF,0},{0xFF,0x00,0xFF,0xFF,0xFF},
                                  {0xFF,0xFF,0x00,0x00,0},{0xFF,0xFF,0x00,0x00,0xFF},{0xFF,0xFF,0x00,0xFF,0},{0xFF,0xFF,0x00,0xFF,0xFF},
                                  {0xFF,0xFF,0xFF,0x00,0},{0xFF,0xFF,0xFF,0x00,0xFF},{0xFF,0xFF,0xFF,0xFF,0},{0xFF,0xFF,0xFF,0xFF,0xFF}};
+
 // Used for line-by-line recoding and scaling of the characters of the auxiliary display line.
 // All 32 possible variants of a 5-pixel wide character bitmap string are converted into
 // the corresponding 5 OLED display pixels with 16 color gradations and packed into 3 bytes.
+
 const uint8_t Upscale2[32][3] = {{0x00,0x00,0x00},{0x00,0x00,0xF0},{0x00,0x0F,0x00},{0x00,0x0F,0xF0},{0x00,0xF0,0x00},{0x00,0xF0,0xF0},
                                  {0x00,0xFF,0x00},{0x00,0xFF,0xF0},{0x0F,0x00,0x00},{0x0F,0x00,0xF0},{0x0F,0x0F,0x00},{0x0F,0x0F,0xF0},
                                  {0x0F,0xF0,0x00},{0x0F,0xF0,0xF0},{0x0F,0xFF,0x00},{0x0F,0xFF,0xF0},{0xF0,0x00,0x00},{0xF0,0x00,0xF0},
                                  {0xF0,0x0F,0x00},{0xF0,0x0F,0xF0},{0xF0,0xF0,0x00},{0xF0,0xF0,0xF0},{0xF0,0xFF,0x00},{0xF0,0xFF,0xF0},
                                  {0xFF,0x00,0x00},{0xFF,0x00,0xF0},{0xFF,0x0F,0x00},{0xFF,0x0F,0xF0},{0xFF,0xF0,0x00},{0xFF,0xF0,0xF0},
                                  {0xFF,0xFF,0x00},{0xFF,0xFF,0xF0}};
+
 // A 256x5 pixel sprite (128x5 bytes) is used to draw the annunciators by copying rectangular areas into the OLED buffer.
 const uint8_t Sprites[5][128] =	{
 	      { 0x00,0x00,0x00,0xF0,0xF0,0xF0,0x00,0x00,0x00,0xF0,0xFF,0xF0,0x0F,0x00,0x00,0x0F,0x00,0xF0,0xF0,0xFF,0xF0,0xF0,0x00,0xF0,0x00,0xF0,0x0F,0xFF,0x00,0xF0,0x0F,0x0F,
@@ -101,11 +114,14 @@ const uint8_t Sprites[5][128] =	{
 	        0xFF,0x0F,0xF0,0xFF,0x00,0x0F,0xFF,0x00,0xF0,0x00,0x00,0xF0,0x00,0xF0,0xF0,0xF0,0x0F,0x00,0x00,0xF0,0x0F,0x00,0xFF,0xFF,0x00,0x0F,0xFF,0x0F,0x0F,0x0F,0x0F,0x00,
 	        0x0F,0x0F,0x00,0xF0,0xF0,0x00,0xF0,0x00,0xF0,0x0F,0x0F,0x00,0xF0,0x00,0xF0,0xF0,0xFF,0x0F,0x0F,0x0F,0x0F,0x0F,0xFF,0x0F,0xF0,0xF0,0x0F,0x00,0x0F,0xF0,0xF0,0x00,
 	        0x00,0xFF,0xF0,0x0F,0x0F,0x0F,0xFF,0x0F,0x00,0x0F,0x00,0x0F,0x00,0xFF,0x0F,0x0F,0x00,0x00,0xFF,0x0F,0x00,0xF0,0x0F,0x00,0x0F,0xFF,0x0F,0x0F,0x0F,0xF0,0xF0,0x00 } };
+
 // Declare bytes array for a OLED frame buffer.
 // Dimensions are divided by 2 because one byte contains two 4-bit grayscale pixels
 uint8_t tx_buffer[64*256/2];
+
 // Flag indicating finish of SPI transmission to OLED
 volatile uint8_t SPI1_TX_completed_flag = 1; 
+
 // Flag indicating finish of SPI start-up initialization
 volatile uint8_t Init_Completed_flag = 0;
 /* USER CODE END PV */
@@ -119,6 +135,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 //******************************************************************************
+
 //SPI transmission finished interrupt callback
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi1)
 {
@@ -132,6 +149,7 @@ static uint8_t InverseByte(uint8_t a)
     return (a >> 4) | (a << 4);
 }
 //******************************************************************************
+
 // Each character on the display is encoded by a matrix of 40 bits packed
 // into 5 consecutive bytes. 5x7=35 bits (S1-S35) define the pixel image of the character,
 // 1 bit (S36) is the annunciator, 4 bits are not used. To optimize VFD PCB routing,
@@ -169,9 +187,10 @@ void Packets_to_chars (void)
     chars[Reorder[i]][4] = 0x1F & InverseByte(d4 & 0xF8);
     chars[Reorder[i]][5] = 0x1F & InverseByte(d3 << 3);
     chars[Reorder[i]][6] = 0x1F & InverseByte((d2 <<6) | ((d3 & 0xE0) >> 2));
-    flags[Reorder[i]] = (d2 & 0x40) == 0x40;
+    flags[Reorder[i]] = (d2 & 0x40) == 0x40;	  
   };
 }
+
 //******************************************************************************
 /* USER CODE END 0 */
 

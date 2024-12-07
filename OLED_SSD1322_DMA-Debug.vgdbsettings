@@ -39,6 +39,14 @@
     <PostDebugActions />
     <DebugStopActions />
     <BreakMode>Default</BreakMode>
+    <CustomBreakCommand>
+      <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
+      <RemoteHost>
+        <HostName>BuildMachine</HostName>
+        <Transport>BuiltinShortcut</Transport>
+      </RemoteHost>
+      <BackgroundMode xsi:nil="true" />
+    </CustomBreakCommand>
   </CustomDebug>
   <CustomShortcuts>
     <Shortcuts />
@@ -98,11 +106,11 @@
       <EnableAbsolutePathReporting>true</EnableAbsolutePathReporting>
     </AdditionalGDBSettings>
     <DebugMethod>
-      <ID>com.sysprogs.arm.openocd</ID>
-      <InterfaceID>stlink-v2</InterfaceID>
-      <InterfaceSerialNumber>6&amp;10C71C98&amp;0&amp;3</InterfaceSerialNumber>
+      <ID>com.sysprogs.arm.openocd.st</ID>
+      <InterfaceID>stlink-st</InterfaceID>
+      <InterfaceSerialNumber>001C00283137510B39383538</InterfaceSerialNumber>
       <Configuration xsi:type="com.visualgdb.edp.openocd.settings">
-        <CommandLine>-f interface/stlink-v2.cfg -c "transport select swd" -f target/stm32f1x.cfg -c init -c "reset init"</CommandLine>
+        <CommandLine>--set "CHIPNAME $$SYS:MCU_ID$$Xx" --set "CONNECT_UNDER_RESET 1" -f interface/stlink-dap.cfg -c "adapter speed 3000" -f target/stm32f1x.cfg -c init -c "reset init"</CommandLine>
         <ExtraParameters>
           <Frequency xsi:nil="true" />
           <BoostedFrequency xsi:nil="true" />
@@ -112,10 +120,11 @@
         <ProgramMode>Enabled</ProgramMode>
         <StartupCommands>
           <string>set remotetimeout 60</string>
-          <string>target extended-remote :$$SYS:GDB_PORT$$</string>
+          <string>target remote :$$SYS:GDB_PORT$$</string>
           <string>mon halt</string>
           <string>mon reset init</string>
           <string>load</string>
+          <string>mon reset init</string>
         </StartupCommands>
         <ProgramFLASHUsingExternalTool>false</ProgramFLASHUsingExternalTool>
         <PreferredGDBPort>0</PreferredGDBPort>

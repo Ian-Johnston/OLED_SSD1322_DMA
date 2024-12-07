@@ -76,6 +76,10 @@ void Error_Handler(void);
 #define VFD_SCK_GPIO_Port GPIOB
 #define VFD_SDA_Pin GPIO_PIN_15
 #define VFD_SDA_GPIO_Port GPIOB
+//#define VFD_SCK_Pin GPIO_PIN_8
+//#define VFD_SCK_GPIO_Port GPIOA
+//#define VFD_SDA_Pin GPIO_PIN_9
+//#define VFD_SDA_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
